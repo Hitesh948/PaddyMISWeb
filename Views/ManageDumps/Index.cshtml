@@ -1,0 +1,1581 @@
+﻿@using System.Data
+@model DataTable
+
+@{
+    ViewData["Title"] = "Manage Dumps";
+
+    DataTable units =
+        ViewBag.Units as DataTable ?? new DataTable();
+
+    int totalDumps = ViewBag.TotalDumps ?? 0;
+    int activeDumps = ViewBag.ActiveDumps ?? 0;
+    int inactiveDumps = ViewBag.InactiveDumps ?? 0;
+    int purchaseDumps = ViewBag.PurchaseDumps ?? 0;
+    int dispatchDumps = ViewBag.DispatchDumps ?? 0;
+
+    string currentSearch = ViewBag.Search ?? "";
+    string currentUnitID = ViewBag.UnitID ?? "";
+    string currentGroupType = ViewBag.GroupType ?? "";
+    string currentStatus = ViewBag.Status ?? "";
+}
+
+<style>
+
+    .manage-page {
+        padding: 24px;
+    }
+
+    /* =========================================================
+           HEADER
+        ========================================================= */
+
+    .manage-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .manage-title {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 750;
+        color: #243126;
+    }
+
+    .manage-subtitle {
+        margin-top: 5px;
+        color: #7b847e;
+        font-size: 14px;
+    }
+
+
+    /* =========================================================
+           SUMMARY CARDS
+        ========================================================= */
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .summary-card {
+        background: #ffffff;
+        border: 1px solid #edf0ed;
+        border-radius: 15px;
+        padding: 18px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.045);
+    }
+
+    .summary-label {
+        font-size: 12px;
+        color: #7a847d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .summary-number {
+        margin-top: 6px;
+        font-size: 28px;
+        font-weight: 800;
+        color: #26312a;
+    }
+
+    .summary-card.total {
+        border-left: 4px solid #6c757d;
+    }
+
+    .summary-card.active {
+        border-left: 4px solid #198754;
+    }
+
+    .summary-card.inactive {
+        border-left: 4px solid #adb5bd;
+    }
+
+    .summary-card.purchase {
+        border-left: 4px solid #0d6efd;
+    }
+
+    .summary-card.dispatch {
+        border-left: 4px solid #fd7e14;
+    }
+
+
+    /* =========================================================
+           COMMON CARD
+        ========================================================= */
+
+    .content-card {
+        background: #ffffff;
+        border: 1px solid #edf0ed;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.045);
+        margin-bottom: 22px;
+    }
+
+    .content-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #edf0ed;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .content-card-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 750;
+        color: #2d382f;
+    }
+
+    .content-card-body {
+        padding: 20px;
+    }
+
+
+    /* =========================================================
+           FILTERS
+        ========================================================= */
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: minmax(220px, 2fr) minmax(160px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) auto auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .field-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #68736c;
+    }
+
+    .filter-control {
+        min-height: 44px;
+        border-radius: 10px !important;
+        border: 1px solid #dce3dd;
+    }
+
+        .filter-control:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 .15rem rgba(25,135,84,.10);
+        }
+
+    .btn-filter,
+    .btn-reset {
+        min-height: 44px;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 0 18px;
+        white-space: nowrap;
+    }
+
+    .btn-filter {
+        background: #198754;
+        border-color: #198754;
+        color: #fff;
+    }
+
+        .btn-filter:hover {
+            background: #157347;
+            border-color: #157347;
+            color: #fff;
+        }
+
+
+    /* =========================================================
+           ADD DUMP
+        ========================================================= */
+
+    .add-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr 1fr auto;
+        gap: 12px;
+        align-items: end;
+    }
+
+    .btn-add {
+        min-height: 44px;
+        border-radius: 10px;
+        font-weight: 700;
+        padding: 0 20px;
+        white-space: nowrap;
+    }
+
+
+    /* =========================================================
+           TABLE
+        ========================================================= */
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .dump-table {
+        width: 100%;
+        min-width: 850px;
+        border-collapse: collapse;
+    }
+
+        .dump-table th {
+            background: #f7f9f7;
+            color: #6c756e;
+            font-size: 12px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            padding: 14px 15px;
+            white-space: nowrap;
+            border-bottom: 1px solid #e8ece9;
+        }
+
+        .dump-table td {
+            padding: 14px 15px;
+            border-bottom: 1px solid #eef1ef;
+            color: #37423a;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .dump-table tbody tr:hover {
+            background: #fbfdfb;
+        }
+
+    .dump-name {
+        font-weight: 700;
+        color: #26332a;
+    }
+
+
+    /* =========================================================
+           BADGES
+        ========================================================= */
+
+    .badge-type,
+    .badge-status {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 11px;
+        font-weight: 750;
+    }
+
+    .badge-purchase {
+        background: #eaf2ff;
+        color: #0d6efd;
+    }
+
+    .badge-dispatch {
+        background: #fff0e5;
+        color: #e86f00;
+    }
+
+    .badge-active {
+        background: #e8f7ee;
+        color: #198754;
+    }
+
+    .badge-inactive {
+        background: #f0f2f3;
+        color: #687178;
+    }
+
+
+    /* =========================================================
+           ACTIONS
+        ========================================================= */
+
+    .action-buttons {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .btn-action {
+        min-height: 34px;
+        border-radius: 8px;
+        padding: 5px 11px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+
+    /* =========================================================
+           EMPTY
+        ========================================================= */
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #7b857e;
+    }
+
+    .empty-icon {
+        font-size: 40px;
+        margin-bottom: 8px;
+    }
+
+    .empty-title {
+        font-weight: 750;
+        font-size: 16px;
+        color: #4d5750;
+    }
+
+    .empty-text {
+        font-size: 13px;
+        margin-top: 4px;
+    }
+
+
+    /* =========================================================
+           ALERTS
+        ========================================================= */
+
+    .alert {
+        border-radius: 11px;
+        border: none;
+        margin-bottom: 18px;
+    }
+
+
+    /* =========================================================
+           MODAL
+        ========================================================= */
+
+    .custom-modal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(18, 24, 20, .45);
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+        .custom-modal.show {
+            display: flex;
+        }
+
+    .custom-modal-box {
+        width: 100%;
+        max-width: 520px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 18px 55px rgba(0,0,0,.20);
+        overflow: hidden;
+    }
+
+    .custom-modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 20px;
+        border-bottom: 1px solid #edf0ed;
+    }
+
+    .custom-modal-title {
+        margin: 0;
+        font-size: 19px;
+        font-weight: 750;
+        color: #27332a;
+    }
+
+    .modal-close {
+        border: none;
+        background: #f1f3f2;
+        width: 34px;
+        height: 34px;
+        border-radius: 9px;
+        font-size: 21px;
+        color: #606a63;
+        cursor: pointer;
+    }
+
+    .custom-modal-body {
+        padding: 20px;
+    }
+
+    .custom-modal-footer {
+        padding: 15px 20px;
+        border-top: 1px solid #edf0ed;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .active-check {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+        .active-check input {
+            width: 18px;
+            height: 18px;
+        }
+
+
+    /* =========================================================
+           RESPONSIVE
+        ========================================================= */
+
+    @@media (max-width: 1100px) {
+
+        .summary-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .add-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+
+    @@media (max-width: 700px) {
+
+        .manage-page {
+            padding: 14px;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .filter-grid,
+        .add-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .manage-title {
+            font-size: 24px;
+        }
+
+        .content-card-body {
+            padding: 15px;
+        }
+
+        .summary-card {
+            padding: 15px;
+        }
+    }
+
+
+    @@media (max-width: 450px) {
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
+
+<div class="manage-page">
+
+    <!-- =====================================================
+         HEADER
+    ===================================================== -->
+
+    <div class="manage-header">
+
+        <div>
+
+            <h1 class="manage-title">
+                Manage Dumps
+            </h1>
+
+            <div class="manage-subtitle">
+                Configure purchase and dispatch dump locations
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ALERTS
+    ===================================================== -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["Error"]
+        </div>
+    }
+
+
+    <!-- =====================================================
+         SUMMARY
+    ===================================================== -->
+
+    <div class="summary-grid">
+
+        <div class="summary-card total">
+
+            <div class="summary-label">
+                Total Dumps
+            </div>
+
+            <div class="summary-number">
+                @totalDumps
+            </div>
+
+        </div>
+
+
+        <div class="summary-card active">
+
+            <div class="summary-label">
+                Active
+            </div>
+
+            <div class="summary-number">
+                @activeDumps
+            </div>
+
+        </div>
+
+
+        <div class="summary-card inactive">
+
+            <div class="summary-label">
+                Inactive
+            </div>
+
+            <div class="summary-number">
+                @inactiveDumps
+            </div>
+
+        </div>
+
+
+        <div class="summary-card purchase">
+
+            <div class="summary-label">
+                Purchase
+            </div>
+
+            <div class="summary-number">
+                @purchaseDumps
+            </div>
+
+        </div>
+
+
+        <div class="summary-card dispatch">
+
+            <div class="summary-label">
+                Dispatch
+            </div>
+
+            <div class="summary-number">
+                @dispatchDumps
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTERS
+    ===================================================== -->
+
+    <div class="content-card">
+
+        <div class="content-card-header">
+
+            <h2 class="content-card-title">
+                Search & Filter
+            </h2>
+
+        </div>
+
+
+        <div class="content-card-body">
+
+            <form method="get"
+                  action="/ManageDumps">
+
+                <div class="filter-grid">
+
+                    <!-- Search -->
+
+                    <div>
+
+                        <label class="field-label">
+                            Search
+                        </label>
+
+                        <input type="text"
+                               name="search"
+                               value="@currentSearch"
+                               class="form-control filter-control"
+                               placeholder="Search dump or unit..." />
+
+                    </div>
+
+
+                    <!-- Unit -->
+
+                    <div>
+
+                        <label class="field-label">
+                            Unit
+                        </label>
+
+                        <select name="unitID"
+                                class="form-select filter-control">
+
+                            <option value="">
+                                All Units
+                            </option>
+
+                            @foreach (DataRow unit in units.Rows)
+                            {
+                                string id =
+                                    unit["UnitID"].ToString() ?? "";
+
+                                string name =
+                                    unit["UnitName"].ToString() ?? "";
+
+                                if (id == currentUnitID)
+                                {
+                                    <option value="@id"
+                                            selected>
+                                        @name
+                                    </option>
+                                }
+                                else
+                                {
+                                    <option value="@id">
+                                        @name
+                                    </option>
+                                }
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Type -->
+
+                    <div>
+
+                        <label class="field-label">
+                            Type
+                        </label>
+
+                        <select name="groupType"
+                                class="form-select filter-control">
+
+                            <option value="">
+                                All Types
+                            </option>
+
+                            @if (currentGroupType == "Purchase")
+                            {
+                                <option value="Purchase"
+                                        selected>
+                                    Purchase
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="Purchase">
+                                    Purchase
+                                </option>
+                            }
+
+                            @if (currentGroupType == "Dispatch")
+                            {
+                                <option value="Dispatch"
+                                        selected>
+                                    Dispatch
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="Dispatch">
+                                    Dispatch
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Status -->
+
+                    <div>
+
+                        <label class="field-label">
+                            Status
+                        </label>
+
+                        <select name="status"
+                                class="form-select filter-control">
+
+                            <option value="">
+                                All Status
+                            </option>
+
+                            @if (currentStatus == "Active")
+                            {
+                                <option value="Active"
+                                        selected>
+                                    Active
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="Active">
+                                    Active
+                                </option>
+                            }
+
+                            @if (currentStatus == "Inactive")
+                            {
+                                <option value="Inactive"
+                                        selected>
+                                    Inactive
+                                </option>
+                            }
+                            else
+                            {
+                                <option value="Inactive">
+                                    Inactive
+                                </option>
+                            }
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Filter -->
+
+                    <div>
+
+                        <button type="submit"
+                                class="btn btn-filter w-100">
+
+                            Apply
+
+                        </button>
+
+                    </div>
+
+
+                    <!-- Reset -->
+
+                    <div>
+
+                        <a href="/ManageDumps"
+                           class="btn btn-outline-secondary btn-reset w-100">
+
+                            Reset
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         ADD DUMP
+    ===================================================== -->
+
+    <div class="content-card">
+
+        <div class="content-card-header">
+
+            <h2 class="content-card-title">
+                Add New Dump
+            </h2>
+
+        </div>
+
+
+        <div class="content-card-body">
+
+            <form method="post"
+                  action="/ManageDumps/Add">
+
+                @Html.AntiForgeryToken()
+
+                <div class="add-grid">
+
+                    <div>
+
+                        <label class="field-label">
+                            Dump Name
+                        </label>
+
+                        <input type="text"
+                               name="groupName"
+                               class="form-control filter-control"
+                               placeholder="Enter dump name"
+                               maxlength="255"
+                               required />
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="field-label">
+                            Unit
+                        </label>
+
+                        <select name="unitID"
+                                id="addUnit"
+                                class="form-select filter-control"
+                                required>
+
+                            <option value="">
+                                Select Unit
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <label class="field-label">
+                            Type
+                        </label>
+
+                        <select name="groupType"
+                                class="form-select filter-control"
+                                required>
+
+                            <option value="Purchase">
+                                Purchase
+                            </option>
+
+                            <option value="Dispatch">
+                                Dispatch
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div>
+
+                        <button type="submit"
+                                class="btn btn-primary btn-add w-100">
+
+                            + Add Dump
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         DUMP TABLE
+    ===================================================== -->
+
+    <div class="content-card">
+
+        <div class="content-card-header">
+
+            <h2 class="content-card-title">
+                Dumps
+            </h2>
+
+            <span style="font-size:13px; color:#7b847e;">
+                @Model.Rows.Count result(s)
+            </span>
+
+        </div>
+
+
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📦
+                </div>
+
+                <div class="empty-title">
+                    No dumps found
+                </div>
+
+                <div class="empty-text">
+                    Try changing your search or filters.
+                </div>
+
+            </div>
+        }
+        else
+        {
+            <div class="table-wrap">
+
+                <table class="dump-table">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                #
+                            </th>
+
+                            <th>
+                                Dump Name
+                            </th>
+
+                            <th>
+                                Unit
+                            </th>
+
+                            <th>
+                                Type
+                            </th>
+
+                            <th>
+                                Status
+                            </th>
+
+                            <th>
+                                Actions
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @{
+                            int serial = 1;
+                        }
+
+                        @foreach (DataRow row in Model.Rows)
+                        {
+                            int groupID =
+                                Convert.ToInt32(
+                                    row["GroupID"]);
+
+                            int unitID =
+                                row["UnitID"] == DBNull.Value
+                                ? 0
+                                : Convert.ToInt32(
+                                    row["UnitID"]);
+
+                            string unitName =
+                                row["UnitName"] == DBNull.Value
+                                ? "-"
+                                : row["UnitName"]?.ToString()
+                                  ?? "-";
+
+                            string groupName =
+                                row["GroupName"] == DBNull.Value
+                                ? ""
+                                : row["GroupName"]?.ToString()
+                                  ?? "";
+
+                            string groupType =
+                                row["GroupType"] == DBNull.Value
+                                ? ""
+                                : row["GroupType"]?.ToString()
+                                  ?? "";
+
+                            bool isActive =
+                                row["IsActive"] != DBNull.Value &&
+                                Convert.ToBoolean(
+                                    row["IsActive"]);
+
+
+                            <tr>
+
+                                <td>
+                                    @serial
+                                </td>
+
+
+                                <td>
+
+                                    <span class="dump-name">
+                                        @groupName
+                                    </span>
+
+                                </td>
+
+
+                                <td>
+                                    @unitName
+                                </td>
+
+
+                                <td>
+
+                                    @if (groupType == "Purchase")
+                                    {
+                                        <span class="badge-type badge-purchase">
+                                            Purchase
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-type badge-dispatch">
+                                            Dispatch
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <td>
+
+                                    @if (isActive)
+                                    {
+                                        <span class="badge-status badge-active">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge-status badge-inactive">
+                                            Inactive
+                                        </span>
+                                    }
+
+                                </td>
+
+
+                                <td>
+
+                                    <div class="action-buttons">
+
+                                        <button type="button"
+                                                class="btn btn-outline-primary btn-action edit-dump-btn"
+                                                data-group-id="@groupID"
+                                                data-group-name="@groupName"
+                                                data-unit-id="@unitID"
+                                                data-group-type="@groupType"
+                                                data-active="@isActive">
+
+                                            Edit
+
+                                        </button>
+
+
+                                        <form method="post"
+                                              action="/ManageDumps/ToggleStatus"
+                                              style="display:inline;">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="groupID"
+                                                   value="@groupID" />
+
+                                            @if (isActive)
+                                            {
+                                                <button type="submit"
+                                                        class="btn btn-outline-danger btn-action"
+                                                        onclick="return confirm('Deactivate this dump?');">
+
+                                                    Deactivate
+
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit"
+                                                        class="btn btn-outline-success btn-action">
+
+                                                    Activate
+
+                                                </button>
+                                            }
+
+                                        </form>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                            serial++;
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+
+<!-- =========================================================
+     EDIT MODAL
+========================================================= -->
+
+<div id="editDumpModal"
+     class="custom-modal">
+
+    <div class="custom-modal-box">
+
+        <div class="custom-modal-header">
+
+            <h2 class="custom-modal-title">
+                Edit Dump
+            </h2>
+
+            <button type="button"
+                    class="modal-close"
+                    id="closeEditModal">
+
+                ×
+
+            </button>
+
+        </div>
+
+
+        <form method="post"
+              action="/ManageDumps/Edit">
+
+            @Html.AntiForgeryToken()
+
+            <div class="custom-modal-body">
+
+                <input type="hidden"
+                       name="groupID"
+                       id="editGroupID" />
+
+
+                <div class="mb-3">
+
+                    <label class="field-label">
+                        Dump Name
+                    </label>
+
+                    <input type="text"
+                           name="groupName"
+                           id="editGroupName"
+                           class="form-control filter-control"
+                           maxlength="255"
+                           required />
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="field-label">
+                        Unit
+                    </label>
+
+                    <select name="unitID"
+                            id="editUnit"
+                            class="form-select filter-control"
+                            required>
+                    </select>
+
+                </div>
+
+
+                <div class="mb-3">
+
+                    <label class="field-label">
+                        Type
+                    </label>
+
+                    <select name="groupType"
+                            id="editGroupType"
+                            class="form-select filter-control"
+                            required>
+
+                        <option value="Purchase">
+                            Purchase
+                        </option>
+
+                        <option value="Dispatch">
+                            Dispatch
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="active-check">
+
+                    <input type="checkbox"
+                           id="editIsActive" />
+
+                    <label for="editIsActive">
+                        Active
+                    </label>
+
+                </div>
+
+
+                <input type="hidden"
+                       name="isActive"
+                       id="editIsActiveValue"
+                       value="false" />
+
+            </div>
+
+
+            <div class="custom-modal-footer">
+
+                <button type="button"
+                        class="btn btn-light"
+                        id="cancelEditModal">
+
+                    Cancel
+
+                </button>
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    Save Changes
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function() {
+
+            // =====================================================
+            // LOAD UNITS
+            // =====================================================
+
+            const addUnit =
+                document.getElementById("addUnit");
+
+            const editUnit =
+                document.getElementById("editUnit");
+
+
+            fetch("/ManageDumps/GetUnits")
+                .then(function(response) {
+
+                    if (!response.ok) {
+                        throw new Error(
+                            "Unable to load units."
+                        );
+                    }
+
+                    return response.json();
+
+                })
+                .then(function(data) {
+
+                    addUnit.innerHTML =
+                        '<option value="">Select Unit</option>';
+
+                    editUnit.innerHTML =
+                        '<option value="">Select Unit</option>';
+
+
+                    data.forEach(function(unit) {
+
+                        const addOption =
+                            document.createElement("option");
+
+                        addOption.value =
+                            unit.unitID;
+
+                        addOption.textContent =
+                            unit.unitName;
+
+                        addUnit.appendChild(
+                            addOption
+                        );
+
+
+                        const editOption =
+                            document.createElement("option");
+
+                        editOption.value =
+                            unit.unitID;
+
+                        editOption.textContent =
+                            unit.unitName;
+
+                        editUnit.appendChild(
+                            editOption
+                        );
+
+                    });
+
+                })
+                .catch(function(error) {
+
+                    console.error(
+                        "Unit loading error:",
+                        error
+                    );
+
+                    addUnit.innerHTML =
+                        '<option value="">Unable to load units</option>';
+
+                    editUnit.innerHTML =
+                        '<option value="">Unable to load units</option>';
+
+                });
+
+
+            // =====================================================
+            // EDIT BUTTONS
+            // =====================================================
+
+            const editButtons =
+                document.querySelectorAll(
+                    ".edit-dump-btn"
+                );
+
+
+            editButtons.forEach(
+                function(button) {
+
+                    button.addEventListener(
+                        "click",
+                        function() {
+
+                            const groupID =
+                                this.dataset.groupId;
+
+                            const groupName =
+                                this.dataset.groupName;
+
+                            const unitID =
+                                this.dataset.unitId;
+
+                            const groupType =
+                                this.dataset.groupType;
+
+                            const active =
+                                this.dataset.active === "True" ||
+                                this.dataset.active === "true";
+
+
+                            document.getElementById(
+                                "editGroupID"
+                            ).value =
+                                groupID;
+
+
+                            document.getElementById(
+                                "editGroupName"
+                            ).value =
+                                groupName;
+
+
+                            document.getElementById(
+                                "editUnit"
+                            ).value =
+                                unitID;
+
+
+                            document.getElementById(
+                                "editGroupType"
+                            ).value =
+                                groupType;
+
+
+                            document.getElementById(
+                                "editIsActive"
+                            ).checked =
+                                active;
+
+
+                            document.getElementById(
+                                "editIsActiveValue"
+                            ).value =
+                                active
+                                    ? "true"
+                                    : "false";
+
+
+                            document.getElementById(
+                                "editDumpModal"
+                            ).classList.add("show");
+
+
+                            document.body.style.overflow =
+                                "hidden";
+
+                        }
+                    );
+
+                }
+            );
+
+
+            // =====================================================
+            // ACTIVE CHECKBOX
+            // =====================================================
+
+            document.getElementById(
+                "editIsActive"
+            ).addEventListener(
+                "change",
+                function() {
+
+                    document.getElementById(
+                        "editIsActiveValue"
+                    ).value =
+                        this.checked
+                            ? "true"
+                            : "false";
+
+                }
+            );
+
+
+            // =====================================================
+            // CLOSE MODAL
+            // =====================================================
+
+            function closeEditModal() {
+
+                document.getElementById(
+                    "editDumpModal"
+                ).classList.remove("show");
+
+
+                document.body.style.overflow =
+                    "";
+
+            }
+
+
+            document.getElementById(
+                "closeEditModal"
+            ).addEventListener(
+                "click",
+                closeEditModal
+            );
+
+
+            document.getElementById(
+                "cancelEditModal"
+            ).addEventListener(
+                "click",
+                closeEditModal
+            );
+
+
+            // =====================================================
+            // CLICK OUTSIDE MODAL
+            // =====================================================
+
+            document.getElementById(
+                "editDumpModal"
+            ).addEventListener(
+                "click",
+                function(event) {
+
+                    if (event.target === this) {
+
+                        closeEditModal();
+
+                    }
+
+                }
+            );
+
+
+            // =====================================================
+            // ESCAPE
+            // =====================================================
+
+            document.addEventListener(
+                "keydown",
+                function(event) {
+
+                    if (
+                        event.key === "Escape" &&
+                        document
+                            .getElementById(
+                                "editDumpModal"
+                            )
+                            .classList
+                            .contains("show")
+                    ) {
+
+                        closeEditModal();
+
+                    }
+
+                }
+            );
+
+        }
+    );
+
+</script>

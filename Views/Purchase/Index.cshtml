@@ -1,0 +1,982 @@
+﻿@using System.Data
+
+@model System.Data.DataTable
+
+@{
+    int currentPage = Convert.ToInt32(ViewBag.CurrentPage ?? 1);
+    int pageSize = Convert.ToInt32(ViewBag.PageSize ?? 50);
+    int totalRecords = Convert.ToInt32(ViewBag.TotalRecords ?? 0);
+    int totalPages = Convert.ToInt32(ViewBag.TotalPages ?? 1);
+
+    string search = ViewBag.Search?.ToString() ?? "";
+    string fromDate = ViewBag.FromDate?.ToString() ?? "";
+    string toDate = ViewBag.ToDate?.ToString() ?? "";
+
+    int startRecord = totalRecords == 0
+        ? 0
+        : ((currentPage - 1) * pageSize) + 1;
+
+    int endRecord = Math.Min(
+        currentPage * pageSize,
+        totalRecords
+    );
+
+    int[] allowedPageSizes = ViewBag.AllowedPageSizes
+        ?? new int[] { 25, 50, 100 };
+}
+
+<div class="purchase-page">
+
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="page-header">
+
+        <div>
+            <div class="page-title">
+                Purchase Data
+            </div>
+
+            <div class="page-subtitle">
+                Paddy weight records
+            </div>
+        </div>
+
+        <div class="record-badge">
+            @totalRecords.ToString("N0") Records
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- FILTER CARD -->
+    <!-- ========================================================= -->
+
+    <div class="filter-card">
+
+        <form method="get" action="/Purchase/Index">
+
+            <div class="filter-grid">
+
+                <!-- SEARCH -->
+
+                <div class="filter-group search-group">
+
+                    <label>
+                        Search
+                    </label>
+
+                    <input type="text"
+                           name="search"
+                           value="@search"
+                           class="form-control"
+                           placeholder="Supplier, site, vehicle or slip no." />
+
+                </div>
+
+
+                <!-- FROM DATE -->
+
+                <div class="filter-group">
+
+                    <label>
+                        From Date
+                    </label>
+
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate"
+                           class="form-control" />
+
+                </div>
+
+
+                <!-- TO DATE -->
+
+                <div class="filter-group">
+
+                    <label>
+                        To Date
+                    </label>
+
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate"
+                           class="form-control" />
+
+                </div>
+
+
+                <!-- BUTTONS -->
+
+                <div class="filter-buttons">
+
+                    <button type="submit"
+                            class="btn-search">
+
+                        Search
+
+                    </button>
+
+                    <a href="/Purchase/Index"
+                       class="btn-reset">
+
+                        Reset
+
+                    </a>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- TOP INFO -->
+    <!-- ========================================================= -->
+
+    <div class="record-info">
+
+        <div>
+
+            Showing
+
+            <strong>
+                @startRecord.ToString("N0")
+            </strong>
+
+            to
+
+            <strong>
+                @endRecord.ToString("N0")
+            </strong>
+
+            of
+
+            <strong>
+                @totalRecords.ToString("N0")
+            </strong>
+
+            records
+
+        </div>
+
+
+        <!-- PAGE SIZE -->
+
+        <form method="get"
+              action="/Purchase/Index"
+              class="page-size-form">
+
+            <input type="hidden"
+                   name="search"
+                   value="@search" />
+
+            <input type="hidden"
+                   name="fromDate"
+                   value="@fromDate" />
+
+            <input type="hidden"
+                   name="toDate"
+                   value="@toDate" />
+
+            <input type="hidden"
+                   name="page"
+                   value="1" />
+
+            <label for="pageSize">
+                Rows:
+            </label>
+
+            <select id="pageSize"
+                    name="pageSize"
+                    class="page-size-select"
+                    onchange="this.form.submit()">
+
+                @foreach (int size in allowedPageSizes)
+                {
+                    if (size == pageSize)
+                    {
+                        <option value="@size" selected>
+                            @size
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@size">
+                            @size
+                        </option>
+                    }
+                }
+
+            </select>
+
+        </form>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- TABLE -->
+    <!-- ========================================================= -->
+
+    <div class="table-card">
+
+        <div class="table-wrapper">
+
+            <table class="purchase-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Supplier
+                        </th>
+
+                        <th>
+                            Site
+                        </th>
+
+                        <th>
+                            Vehicle
+                        </th>
+
+                        <th>
+                            Weight Date
+                        </th>
+
+                        <th>
+                            Slip No.
+                        </th>
+
+                        <th>
+                            Gross
+                        </th>
+
+                        <th>
+                            Tare
+                        </th>
+
+                        <th>
+                            Moisture %
+                        </th>
+
+                        <th>
+                            Net Weight
+                        </th>
+
+                        <th>
+                            Final Net
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    @if (Model != null && Model.Rows.Count > 0)
+                    {
+                        foreach (DataRow row in Model.Rows)
+                        {
+                            <tr>
+
+                                <td class="supplier-cell">
+                                    @row["PO_Supplier_Name"]
+                                </td>
+
+                                <td>
+                                    @row["Site_Name"]
+                                </td>
+
+                                <td class="vehicle-cell">
+                                    @row["VechNo"]
+                                </td>
+
+                                <td class="date-cell">
+
+                                    @if (row["WeightDate"] != DBNull.Value)
+                                    {
+                                        @Convert.ToDateTime(row["WeightDate"]).ToString("dd-MMM-yyyy")
+                                    }
+
+                                </td>
+
+                                <td class="slip-cell">
+
+                                    @if (row["WeightSlipNo"] != DBNull.Value)
+                                    {
+                                        @Convert.ToDouble(row["WeightSlipNo"]).ToString("0")
+                                    }
+
+                                </td>
+
+                                <td>
+                                    @FormatNumber(row["GrossWeight"])
+                                </td>
+
+                                <td>
+                                    @FormatNumber(row["TareWeight"])
+                                </td>
+
+                                <td>
+
+                                    @if (row["MoisturePer"] != DBNull.Value)
+                                    {
+                                        @(FormatNumber(row["MoisturePer"]) + "%")
+                                    }
+
+                                </td>
+
+                                <td class="net-cell">
+                                    @FormatNumber(row["NetWeight"])
+                                </td>
+
+                                <td class="final-net-cell">
+                                    @FormatNumber(row["NetWeightFinal"])
+                                </td>
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+
+                            <td colspan="10"
+                                class="no-data">
+
+                                <div class="no-data-icon">
+                                    No data
+                                </div>
+
+                                <div>
+                                    No purchase records found.
+                                </div>
+
+                                <small>
+                                    Try changing the search or date filters.
+                                </small>
+
+                            </td>
+
+                        </tr>
+                    }
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- PAGINATION -->
+    <!-- ========================================================= -->
+    @if (totalPages > 1)
+    {
+        <div class="pagination-area">
+
+            <!-- PREVIOUS -->
+            @if (currentPage > 1)
+            {
+                <a class="page-button"
+                   href="@BuildPageUrl(currentPage - 1)">
+
+                    ‹ Previous
+
+                </a>
+            }
+            else
+            {
+                <span class="page-button disabled">
+                    ‹ Previous
+                </span>
+            }
+
+
+            <!-- PAGE NUMBERS -->
+
+            <div class="page-numbers">
+
+                @{
+                    int firstPage = Math.Max(
+                        1,
+                        currentPage - 2
+                    );
+
+                    int lastPage = Math.Min(
+                        totalPages,
+                        currentPage + 2
+                    );
+                }
+
+
+                @if (firstPage > 1)
+                {
+                    <a class="page-number"
+                       href="@BuildPageUrl(1)">
+
+                        1
+
+                    </a>
+
+                    @if (firstPage > 2)
+                    {
+                        <span class="page-dots">
+                            ...
+                        </span>
+                    }
+                }
+
+
+                @for (
+                    int i = firstPage;
+                    i <= lastPage;
+                    i++
+                )
+                {
+                    if (i == currentPage)
+                    {
+                        <span class="page-number active">
+                            @i
+                        </span>
+                    }
+                    else
+                    {
+                        <a class="page-number"
+                           href="@BuildPageUrl(i)">
+
+                            @i
+
+                        </a>
+                    }
+                }
+
+
+                @if (lastPage < totalPages)
+                {
+                    @if (lastPage < totalPages - 1)
+                    {
+                        <span class="page-dots">
+                            ...
+                        </span>
+                    }
+
+                    <a class="page-number"
+                       href="@BuildPageUrl(totalPages)">
+
+                        @totalPages
+
+                    </a>
+                }
+
+            </div>
+
+
+            <!-- NEXT -->
+            @if (currentPage < totalPages)
+            {
+                <a class="page-button"
+                   href="@BuildPageUrl(currentPage + 1)">
+
+                    Next ›
+
+                </a>
+            }
+            else
+            {
+                <span class="page-button disabled">
+                    Next ›
+                </span>
+            }
+
+        </div>
+    }
+
+</div>
+
+
+@functions
+{
+    string FormatNumber(object value)
+    {
+        if (value == null || value == DBNull.Value)
+        {
+            return "-";
+        }
+
+        if (double.TryParse(value.ToString(), out double number))
+        {
+            return number.ToString("N2");
+        }
+
+        return value.ToString() ?? "-";
+    }
+
+
+    string BuildPageUrl(int page)
+    {
+        string url =
+            $"/Purchase/Index?page={page}&pageSize={ViewBag.PageSize}";
+
+        if (!string.IsNullOrWhiteSpace(ViewBag.Search?.ToString()))
+        {
+            url +=
+                "&search=" +
+                Uri.EscapeDataString(
+                    ViewBag.Search.ToString()
+                );
+        }
+
+        if (!string.IsNullOrWhiteSpace(ViewBag.FromDate?.ToString()))
+        {
+            url +=
+                "&fromDate=" +
+                Uri.EscapeDataString(
+                    ViewBag.FromDate.ToString()
+                );
+        }
+
+        if (!string.IsNullOrWhiteSpace(ViewBag.ToDate?.ToString()))
+        {
+            url +=
+                "&toDate=" +
+                Uri.EscapeDataString(
+                    ViewBag.ToDate.ToString()
+                );
+        }
+
+        return url;
+    }
+}
+
+
+<style>
+
+    /* ========================================================= */
+    /* PAGE */
+    /* ========================================================= */
+
+    .purchase-page {
+        padding: 24px;
+        max-width: 1800px;
+        margin: 0 auto;
+    }
+
+
+    /* ========================================================= */
+    /* HEADER */
+    /* ========================================================= */
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+
+    .page-title {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .page-subtitle {
+        margin-top: 4px;
+        font-size: 14px;
+        color: #6b7280;
+    }
+
+    .record-badge {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #374151;
+        padding: 9px 15px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+
+    /* ========================================================= */
+    /* FILTER */
+    /* ========================================================= */
+
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        padding: 20px;
+        margin-bottom: 18px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: minmax(250px, 1.8fr) minmax(160px, 1fr) minmax(160px, 1fr) auto;
+        gap: 14px;
+        align-items: end;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+    }
+
+    .form-control {
+        width: 100%;
+        height: 42px;
+        padding: 0 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #111827;
+        outline: none;
+        box-sizing: border-box;
+        font-size: 14px;
+    }
+
+        .form-control:focus {
+            border-color: #6b7280;
+            box-shadow: 0 0 0 3px rgba(107,114,128,0.12);
+        }
+
+    .filter-buttons {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-search,
+    .btn-reset {
+        height: 42px;
+        padding: 0 17px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .btn-search {
+        background: #374151;
+        color: white;
+    }
+
+        .btn-search:hover {
+            background: #1f2937;
+        }
+
+    .btn-reset {
+        background: #f3f4f6;
+        color: #374151;
+        border: 1px solid #d1d5db;
+    }
+
+        .btn-reset:hover {
+            background: #e5e7eb;
+        }
+
+
+    /* ========================================================= */
+    /* RECORD INFO */
+    /* ========================================================= */
+
+    .record-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+        .record-info strong {
+            color: #374151;
+        }
+
+    .page-size-form {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0;
+    }
+
+    .page-size-select {
+        height: 34px;
+        min-width: 70px;
+        padding: 0 8px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        background: #ffffff;
+        color: #374151;
+        font-size: 13px;
+        outline: none;
+        cursor: pointer;
+    }
+
+        .page-size-select:focus {
+            border-color: #6b7280;
+        }
+
+
+    /* ========================================================= */
+    /* TABLE */
+    /* ========================================================= */
+
+    .table-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .table-wrapper {
+        overflow-x: auto;
+        width: 100%;
+    }
+
+    .purchase-table {
+        width: 100%;
+        min-width: 1250px;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+        .purchase-table thead {
+            background: #f8fafc;
+        }
+
+        .purchase-table th {
+            padding: 13px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 700;
+            color: #374151;
+            white-space: nowrap;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .purchase-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #4b5563;
+            white-space: nowrap;
+        }
+
+        .purchase-table tbody tr:hover {
+            background: #fafafa;
+        }
+
+        .purchase-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+    .supplier-cell {
+        font-weight: 600;
+        color: #1f2937 !important;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .vehicle-cell {
+        font-weight: 600;
+        color: #374151 !important;
+    }
+
+    .date-cell {
+        color: #4b5563 !important;
+    }
+
+    .slip-cell {
+        font-weight: 600;
+        color: #374151 !important;
+    }
+
+    .net-cell {
+        font-weight: 600;
+        color: #374151 !important;
+    }
+
+    .final-net-cell {
+        font-weight: 700;
+        color: #111827 !important;
+    }
+
+
+    /* ========================================================= */
+    /* NO DATA */
+    /* ========================================================= */
+
+    .no-data {
+        text-align: center !important;
+        padding: 55px 20px !important;
+        color: #6b7280 !important;
+    }
+
+    .no-data-icon {
+        font-size: 18px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 6px;
+    }
+
+    .no-data small {
+        display: block;
+        margin-top: 5px;
+        color: #9ca3af;
+    }
+
+
+    /* ========================================================= */
+    /* PAGINATION */
+    /* ========================================================= */
+
+    .pagination-area {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    .page-numbers {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .page-button,
+    .page-number {
+        min-width: 40px;
+        height: 38px;
+        padding: 0 12px;
+        border-radius: 8px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        color: #374151;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        font-weight: 600;
+        box-sizing: border-box;
+    }
+
+        .page-button:hover,
+        .page-number:hover {
+            background: #f3f4f6;
+        }
+
+        .page-number.active {
+            background: #374151;
+            border-color: #374151;
+            color: #ffffff;
+        }
+
+        .page-button.disabled {
+            color: #9ca3af;
+            background: #f9fafb;
+            cursor: not-allowed;
+        }
+
+    .page-dots {
+        padding: 0 5px;
+        color: #9ca3af;
+    }
+
+
+    /* ========================================================= */
+    /* RESPONSIVE */
+    /* ========================================================= */
+
+    @@media (max-width: 1100px) {
+
+        .filter-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .search-group {
+            grid-column: 1 / -1;
+        }
+
+        .filter-buttons {
+            justify-content: flex-start;
+        }
+    }
+
+
+    @@media (max-width: 700px) {
+
+        .purchase-page {
+            padding: 14px;
+        }
+
+        .page-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .page-title {
+            font-size: 23px;
+        }
+
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .search-group {
+            grid-column: auto;
+        }
+
+        .filter-buttons {
+            width: 100%;
+        }
+
+        .btn-search,
+        .btn-reset {
+            flex: 1;
+        }
+
+        .record-info {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .pagination-area {
+            gap: 7px;
+        }
+
+        .page-button {
+            padding: 0 9px;
+        }
+
+        .page-number {
+            min-width: 34px;
+            padding: 0 8px;
+        }
+    }
+
+</style>

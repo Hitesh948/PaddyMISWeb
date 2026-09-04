@@ -1,0 +1,643 @@
+﻿@using System.Data
+@model System.Data.DataTable
+
+@{
+    string reportDate = ViewBag.ReportDate ?? DateTime.Today.ToString("yyyy-MM-dd");
+
+    int totalDay = 0;
+    int totalNight = 0;
+    int totalTrolley = 0;
+
+    if (Model != null && Model.Rows.Count > 0)
+    {
+        foreach (DataRow row in Model.Rows)
+        {
+            totalDay += row["DayTrolley"] == DBNull.Value
+                ? 0
+                : Convert.ToInt32(row["DayTrolley"]);
+
+            totalNight += row["NightTrolley"] == DBNull.Value
+                ? 0
+                : Convert.ToInt32(row["NightTrolley"]);
+
+            totalTrolley += row["TotalTrolley"] == DBNull.Value
+                ? 0
+                : Convert.ToInt32(row["TotalTrolley"]);
+        }
+    }
+}
+
+<style>
+
+    .daily-page {
+        padding: 10px 5px 30px 5px;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        gap: 15px;
+    }
+
+    .page-title {
+        font-size: 27px;
+        font-weight: 700;
+        color: #243447;
+        margin: 0;
+    }
+
+    .page-subtitle {
+        color: #777;
+        font-size: 14px;
+        margin-top: 5px;
+    }
+
+    .date-card {
+        background: white;
+        padding: 10px 14px;
+        border-radius: 12px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.07);
+    }
+
+        .date-card label {
+            font-size: 11px;
+            color: #888;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .date-card input {
+            border: none;
+            outline: none;
+            font-weight: 600;
+            color: #243447;
+            background: transparent;
+        }
+
+    .entry-card {
+        background: white;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        border: 1px solid #f0f0f0;
+        margin-bottom: 25px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #243447;
+        margin-bottom: 18px;
+    }
+
+    .form-label-custom {
+        font-size: 13px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 7px;
+    }
+
+    .form-control-custom {
+        width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 11px 13px;
+        font-size: 15px;
+        outline: none;
+        transition: 0.2s;
+        background: white;
+    }
+
+        .form-control-custom:focus {
+            border-color: #54745c;
+            box-shadow: 0 0 0 3px rgba(84,116,92,0.10);
+        }
+
+    .save-btn {
+        width: 100%;
+        border: none;
+        border-radius: 10px;
+        padding: 11px;
+        background: #54745c;
+        color: white;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .save-btn:hover {
+            background: #36563e;
+        }
+
+    .summary-card {
+        background: #f7f9f7;
+        border-radius: 12px;
+        padding: 14px;
+        height: 100%;
+    }
+
+    .summary-label {
+        font-size: 12px;
+        color: #777;
+    }
+
+    .summary-value {
+        font-size: 23px;
+        font-weight: 700;
+        color: #243447;
+        margin-top: 2px;
+    }
+
+    .report-card {
+        background: white;
+        border-radius: 16px;
+        padding: 22px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        border: 1px solid #f0f0f0;
+    }
+
+    .table-custom {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .table-custom th {
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+            padding: 11px 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .table-custom td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+
+        .table-custom tr:last-child td {
+            border-bottom: none;
+        }
+
+    .dump-name {
+        font-weight: 600;
+        color: #243447;
+    }
+
+    .number-cell {
+        font-weight: 600;
+    }
+
+    .total-cell {
+        font-weight: 700;
+    }
+
+    .delete-btn {
+        border: none;
+        background: #fff2f2;
+        color: #c0392b;
+        border-radius: 8px;
+        padding: 7px 10px;
+        cursor: pointer;
+        font-size: 12px;
+    }
+
+        .delete-btn:hover {
+            background: #ffe0e0;
+        }
+
+    .empty-state {
+        text-align: center;
+        padding: 35px 15px;
+        color: #999;
+    }
+
+    .empty-icon {
+        font-size: 35px;
+        margin-bottom: 10px;
+    }
+
+    .selected-date-title {
+        font-size: 14px;
+        color: #777;
+        margin-bottom: 18px;
+    }
+
+    @@media (max-width: 768px) {
+
+        .daily-page {
+            padding: 5px 0 25px 0;
+        }
+
+        .page-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .date-card {
+            width: 100%;
+        }
+
+            .date-card input {
+                width: 100%;
+            }
+
+        .page-title {
+            font-size: 23px;
+        }
+
+        .entry-card,
+        .report-card {
+            padding: 16px;
+            border-radius: 14px;
+        }
+
+        .table-custom th,
+        .table-custom td {
+            padding: 9px 7px;
+        }
+    }
+
+</style>
+
+
+<div class="daily-page">
+
+    <!-- HEADER -->
+    <div class="page-header">
+
+        <div>
+
+            <h1 class="page-title">
+                📝 Daily Report
+            </h1>
+
+            <div class="page-subtitle">
+                Manage daily day and night trolley entries
+            </div>
+
+        </div>
+
+
+        <form method="get"
+              asp-controller="DailyReport"
+              asp-action="Index"
+              class="date-card">
+
+            <label>
+                Select Date
+            </label>
+
+            <input type="date"
+                   name="reportDate"
+                   value="@reportDate"
+                   onchange="this.form.submit();" />
+
+        </form>
+
+    </div>
+
+
+    <!-- ENTRY FORM -->
+    <div class="entry-card">
+
+        <div class="section-title">
+            ➕ Add / Update Entry
+        </div>
+
+        <div class="selected-date-title">
+            Entry Date:
+            <strong>
+                @DateTime.Parse(reportDate).ToString("dd MMM yyyy")
+            </strong>
+        </div>
+
+
+        <form method="post"
+              asp-controller="DailyReport"
+              asp-action="Save">
+
+            <input type="hidden"
+                   name="entryDate"
+                   value="@reportDate" />
+
+
+            <div class="row g-3">
+
+                <!-- DUMP -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label-custom">
+                        🌾 Dump
+                    </label>
+
+                    <select id="groupID"
+                            name="groupID"
+                            class="form-control-custom"
+                            required>
+
+                        <option value="">
+                            Select Dump
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- DAY -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label-custom">
+                        ☀️ Day Trolley
+                    </label>
+
+                    <input type="number"
+                           name="dayTrolley"
+                           class="form-control-custom"
+                           min="0"
+                           value="0"
+                           required />
+
+                </div>
+
+
+                <!-- NIGHT -->
+                <div class="col-12 col-md-3">
+
+                    <label class="form-label-custom">
+                        🌙 Night Trolley
+                    </label>
+
+                    <input type="number"
+                           name="nightTrolley"
+                           class="form-control-custom"
+                           min="0"
+                           value="0"
+                           required />
+
+                </div>
+
+
+                <!-- SAVE -->
+                <div class="col-12 col-md-3 d-flex align-items-end">
+
+                    <button type="submit"
+                            class="save-btn">
+
+                        💾 Save / Update
+
+                    </button>
+
+                </div>
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- SUMMARY -->
+    <div class="row g-3 mb-4">
+
+        <div class="col-12 col-md-4">
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    ☀️ Total Day
+                </div>
+
+                <div class="summary-value">
+                    @totalDay
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-4">
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    🌙 Total Night
+                </div>
+
+                <div class="summary-value">
+                    @totalNight
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="col-12 col-md-4">
+
+            <div class="summary-card">
+
+                <div class="summary-label">
+                    🚜 Total Trolleys
+                </div>
+
+                <div class="summary-value">
+                    @totalTrolley
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- REPORT -->
+    <div class="report-card">
+
+        <div class="section-title">
+            📊 Daily Entries
+        </div>
+
+
+        @if (Model != null && Model.Rows.Count > 0)
+        {
+            <div class="table-responsive">
+
+                <table class="table-custom">
+
+                    <thead>
+
+                        <tr>
+
+                            <th>
+                                Dump
+                            </th>
+
+                            <th>
+                                Day
+                            </th>
+
+                            <th>
+                                Night
+                            </th>
+
+                            <th>
+                                Total
+                            </th>
+
+                            <th>
+                                Action
+                            </th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                        @foreach (DataRow row in Model.Rows)
+                        {
+                            int entryID = Convert.ToInt32(row["EntryID"]);
+
+                            int day = row["DayTrolley"] == DBNull.Value
+                                ? 0
+                                : Convert.ToInt32(row["DayTrolley"]);
+
+                            int night = row["NightTrolley"] == DBNull.Value
+                                ? 0
+                                : Convert.ToInt32(row["NightTrolley"]);
+
+                            int total = row["TotalTrolley"] == DBNull.Value
+                                ? day + night
+                                : Convert.ToInt32(row["TotalTrolley"]);
+
+
+                            <tr>
+
+                                <td class="dump-name">
+                                    @row["GroupName"]
+                                </td>
+
+                                <td class="number-cell">
+                                    @day
+                                </td>
+
+                                <td class="number-cell">
+                                    @night
+                                </td>
+
+                                <td class="total-cell">
+                                    @total
+                                </td>
+
+                                <td>
+
+                                    <form method="post"
+                                          asp-controller="DailyReport"
+                                          asp-action="Delete"
+                                          onsubmit="return confirm('Delete this entry?');">
+
+                                        <input type="hidden"
+                                               name="id"
+                                               value="@entryID" />
+
+                                        <input type="hidden"
+                                               name="reportDate"
+                                               value="@reportDate" />
+
+                                        <button type="submit"
+                                                class="delete-btn">
+
+                                            🗑️ Delete
+
+                                        </button>
+
+                                    </form>
+
+                                </td>
+
+                            </tr>
+                        }
+
+                    </tbody>
+
+                </table>
+
+            </div>
+        }
+        else
+        {
+            <div class="empty-state">
+
+                <div class="empty-icon">
+                    📋
+                </div>
+
+                <div>
+                    No entries found for this date.
+                </div>
+
+            </div>
+        }
+
+    </div>
+
+</div>
+
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const dumpDropdown = document.getElementById("groupID");
+
+        fetch('@Url.Action("GetDumps", "DailyReport")')
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error("Unable to load dumps.");
+                }
+
+                return response.json();
+
+            })
+            .then(data => {
+
+                data.forEach(function(dump) {
+
+                    const option = document.createElement("option");
+
+                    option.value = dump.groupID;
+                    option.textContent = dump.groupName;
+
+                    dumpDropdown.appendChild(option);
+
+                });
+
+            })
+            .catch(error => {
+
+                console.error(error);
+
+                const option = document.createElement("option");
+
+                option.value = "";
+                option.textContent = "Unable to load dumps";
+
+                dumpDropdown.appendChild(option);
+
+            });
+
+    });
+
+</script>

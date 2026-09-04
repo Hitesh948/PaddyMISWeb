@@ -1,0 +1,644 @@
+﻿@{
+    ViewData["Title"] = "Excel Import";
+
+    int totalRows = ViewBag.TotalRows != null
+        ? Convert.ToInt32(ViewBag.TotalRows)
+        : 0;
+
+    int importedRows = ViewBag.ImportedRows != null
+        ? Convert.ToInt32(ViewBag.ImportedRows)
+        : 0;
+
+    int skippedRows = ViewBag.SkippedRows != null
+        ? Convert.ToInt32(ViewBag.SkippedRows)
+        : 0;
+}
+
+<style>
+
+    body {
+        background: #f5f7f9;
+    }
+
+    .import-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 25px;
+    }
+
+    /* ========================================================= */
+    /* HEADER */
+    /* ========================================================= */
+
+    .page-header {
+        background: linear-gradient(135deg, #185c37, #217a4b);
+        color: white;
+        border-radius: 16px;
+        padding: 28px 30px;
+        margin-bottom: 22px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .header-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .header-subtitle {
+        margin-top: 5px;
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .history-button {
+        background: white;
+        color: #185c37;
+        text-decoration: none;
+        padding: 11px 17px;
+        border-radius: 9px;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
+        transition: 0.2s;
+    }
+
+        .history-button:hover {
+            background: #f1f5f3;
+            color: #12472b;
+            transform: translateY(-1px);
+        }
+
+
+    /* ========================================================= */
+    /* MAIN CARD */
+    /* ========================================================= */
+
+    .import-card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+    }
+
+    .title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 6px;
+    }
+
+    .description {
+        color: #6b7280;
+        font-size: 14px;
+        margin-bottom: 22px;
+    }
+
+
+    /* ========================================================= */
+    /* UPLOAD BOX */
+    /* ========================================================= */
+
+    .upload-box {
+        border: 2px dashed #7aa98d;
+        background: #f7fbf8;
+        border-radius: 14px;
+        padding: 38px 25px;
+        text-align: center;
+    }
+
+    .upload-icon {
+        font-size: 42px;
+        margin-bottom: 10px;
+    }
+
+    .upload-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #374151;
+        margin-bottom: 5px;
+    }
+
+    .upload-help {
+        font-size: 13px;
+        color: #6b7280;
+        margin-bottom: 18px;
+    }
+
+    .file-input {
+        display: inline-block;
+        max-width: 100%;
+        font-size: 14px;
+        margin-bottom: 18px;
+    }
+
+    .import-btn {
+        background: #185c37;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 9px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+        .import-btn:hover {
+            background: #12472b;
+            transform: translateY(-1px);
+        }
+
+
+    /* ========================================================= */
+    /* SUCCESS / ERROR */
+    /* ========================================================= */
+
+    .success {
+        margin-top: 20px;
+        padding: 15px 18px;
+        border-radius: 10px;
+        background: #ecfdf3;
+        border: 1px solid #bbf7d0;
+        color: #166534;
+        font-weight: 600;
+    }
+
+    .error {
+        margin-top: 20px;
+        padding: 15px 18px;
+        border-radius: 10px;
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #b91c1c;
+        font-weight: 600;
+    }
+
+
+    /* ========================================================= */
+    /* RESULT CARDS */
+    /* ========================================================= */
+
+    .result-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+        margin-top: 22px;
+    }
+
+    .result-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+
+    .result-number {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .result-label {
+        margin-top: 5px;
+        color: #6b7280;
+        font-size: 13px;
+    }
+
+
+    /* ========================================================= */
+    /* ERROR LIST */
+    /* ========================================================= */
+
+    .error-list {
+        margin-top: 20px;
+        padding: 17px;
+        background: #fff7f7;
+        border: 1px solid #fecaca;
+        border-radius: 10px;
+        color: #991b1b;
+    }
+
+        .error-list strong {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .error-list ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .error-list li {
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+
+    /* ========================================================= */
+    /* INSTRUCTIONS */
+    /* ========================================================= */
+
+    .instructions {
+        margin-top: 25px;
+        padding: 20px;
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+    }
+
+        .instructions h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+            color: #374151;
+        }
+
+        .instructions p {
+            color: #6b7280;
+            font-size: 13px;
+            margin-bottom: 14px;
+        }
+
+    .column-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .column-name {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 7px;
+        padding: 9px 11px;
+        font-family: Consolas, monospace;
+        font-size: 12px;
+        color: #374151;
+    }
+
+
+    /* ========================================================= */
+    /* RESPONSIVE */
+    /* ========================================================= */
+
+    @@media (max-width: 800px) {
+
+        .import-page {
+            padding: 15px;
+        }
+
+        .page-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .history-button {
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .import-card {
+            padding: 20px;
+        }
+
+        .result-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .column-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+
+    @@media (max-width: 500px) {
+
+        .page-header {
+            padding: 22px;
+        }
+
+        .header-title {
+            font-size: 23px;
+        }
+
+        .upload-box {
+            padding: 28px 15px;
+        }
+
+        .import-btn {
+            width: 100%;
+        }
+    }
+
+</style>
+
+
+<div class="import-page">
+
+
+    <!-- ========================================================= -->
+    <!-- HEADER -->
+    <!-- ========================================================= -->
+
+    <div class="page-header">
+
+        <div>
+
+            <div class="header-title">
+                RANA GROUP
+            </div>
+
+            <div class="header-subtitle">
+                PADDY MANAGEMENT SYSTEM • EXCEL IMPORT
+            </div>
+
+        </div>
+
+
+        <a href="/ExcelImport/History"
+           class="history-button">
+
+            VIEW IMPORT HISTORY
+
+        </a>
+
+    </div>
+
+
+    <!-- ========================================================= -->
+    <!-- MAIN CARD -->
+    <!-- ========================================================= -->
+
+    <div class="import-card">
+
+        <div class="title">
+            Import Paddy Purchase Data
+        </div>
+
+        <div class="description">
+            Upload an Excel file to add Paddy Purchase records
+            to the MIS database. Existing duplicate records are
+            automatically skipped.
+        </div>
+
+
+        <!-- ===================================================== -->
+        <!-- UPLOAD FORM -->
+        <!-- ===================================================== -->
+
+        <form asp-controller="ExcelImport"
+              asp-action="Import"
+              method="post"
+              enctype="multipart/form-data"
+              onsubmit="showImporting()">
+
+            <div class="upload-box">
+
+                <div class="upload-icon">
+                    📊
+                </div>
+
+                <div class="upload-title">
+                    Select Excel File
+                </div>
+
+                <div class="upload-help">
+                    Only .xlsx files are supported
+                </div>
+
+                <input type="file"
+                       name="excelFile"
+                       class="file-input"
+                       accept=".xlsx"
+                       required />
+
+                <br />
+
+                <button type="submit"
+                        class="import-btn"
+                        id="importButton">
+
+                    UPLOAD & IMPORT
+
+                </button>
+
+            </div>
+
+        </form>
+
+
+        <!-- ===================================================== -->
+        <!-- SUCCESS MESSAGE -->
+        <!-- ===================================================== -->
+        @if (ViewBag.Success != null)
+        {
+            <div class="success">
+                ✓ @ViewBag.Success
+            </div>
+        }
+
+
+        <!-- ===================================================== -->
+        <!-- ERROR MESSAGE -->
+        <!-- ===================================================== -->
+        @if (ViewBag.Error != null)
+        {
+            <div class="error">
+                ✕ @ViewBag.Error
+            </div>
+        }
+
+
+        <!-- ===================================================== -->
+        <!-- IMPORT RESULT -->
+        <!-- ===================================================== -->
+        @if (ViewBag.FileName != null)
+        {
+            <div class="result-grid">
+
+                <div class="result-card">
+
+                    <div class="result-number">
+                        @totalRows.ToString("N0")
+                    </div>
+
+                    <div class="result-label">
+                        Excel Rows
+                    </div>
+
+                </div>
+
+
+                <div class="result-card">
+
+                    <div class="result-number">
+                        @importedRows.ToString("N0")
+                    </div>
+
+                    <div class="result-label">
+                        Imported
+                    </div>
+
+                </div>
+
+
+                <div class="result-card">
+
+                    <div class="result-number">
+                        @skippedRows.ToString("N0")
+                    </div>
+
+                    <div class="result-label">
+                        Skipped / Duplicate
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="success"
+                 style="margin-top:14px;">
+
+                File:
+                <strong>
+                    @ViewBag.FileName
+                </strong>
+
+            </div>
+        }
+
+
+        <!-- ===================================================== -->
+        <!-- IMPORT ERRORS -->
+        <!-- ===================================================== -->
+        @if (ViewBag.Errors != null &&
+                     ViewBag.Errors.Count > 0)
+        {
+            <div class="error-list">
+
+                <strong>
+                    Rows with errors
+                </strong>
+
+                <ul>
+
+                    @foreach (string error in ViewBag.Errors)
+                    {
+                        <li>
+                            @error
+                        </li>
+                    }
+
+                </ul>
+
+            </div>
+        }
+
+
+        <!-- ===================================================== -->
+        <!-- REQUIRED COLUMNS -->
+        <!-- ===================================================== -->
+
+        <div class="instructions">
+
+            <h3>
+                Required Excel Columns
+            </h3>
+
+            <p>
+                The first row of your Excel sheet must contain
+                these column names:
+            </p>
+
+
+            <div class="column-grid">
+
+                <div class="column-name">
+                    PO_Supplier_Name
+                </div>
+
+                <div class="column-name">
+                    Site_Name
+                </div>
+
+                <div class="column-name">
+                    VechNo
+                </div>
+
+                <div class="column-name">
+                    WeightDate
+                </div>
+
+                <div class="column-name">
+                    WeightSlipNo
+                </div>
+
+                <div class="column-name">
+                    GrossWeight
+                </div>
+
+                <div class="column-name">
+                    TareWeight
+                </div>
+
+                <div class="column-name">
+                    MoisturePer
+                </div>
+
+                <div class="column-name">
+                    MoistureDeductionWeight
+                </div>
+
+                <div class="column-name">
+                    CalculateOnMoisturePer
+                </div>
+
+                <div class="column-name">
+                    ExtraDeduction
+                </div>
+
+                <div class="column-name">
+                    NetWeight
+                </div>
+
+                <div class="column-name">
+                    NetWeightFinal
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    function showImporting() {
+
+        const button =
+            document.getElementById("importButton");
+
+        if (button) {
+
+            button.innerHTML =
+                "IMPORTING... PLEASE WAIT";
+
+            button.disabled = true;
+
+            button.style.opacity = "0.7";
+
+            button.style.cursor = "wait";
+        }
+    }
+
+</script>

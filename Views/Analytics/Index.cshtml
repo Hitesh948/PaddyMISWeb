@@ -1,0 +1,971 @@
+﻿@using System.Data
+
+@{
+    ViewData["Title"] = "Analytics";
+
+    var data =
+        Model as Tuple<DataTable, DataTable>
+        ?? Tuple.Create(
+            new DataTable(),
+            new DataTable());
+
+    DataTable dumpWiseData =
+        data.Item1;
+
+    DataTable dateWiseData =
+        data.Item2;
+
+    int totalPurchase =
+        ViewBag.TotalPurchase ?? 0;
+
+    int totalDispatch =
+        ViewBag.TotalDispatch ?? 0;
+
+    int netTrolleys =
+        ViewBag.NetTrolleys ?? 0;
+
+    int activeDumps =
+        ViewBag.ActiveDumps ?? 0;
+
+    string fromDate =
+        ViewBag.FromDate ?? "";
+
+    string toDate =
+        ViewBag.ToDate ?? "";
+
+    string selectedType =
+        ViewBag.SelectedType ?? "All";
+}
+
+<style>
+
+    .analytics-page {
+        padding: 24px;
+    }
+
+    /* =====================================================
+           HEADER
+        ===================================================== */
+
+    .analytics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .analytics-title {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 800;
+        color: #26332a;
+    }
+
+    .analytics-subtitle {
+        margin-top: 5px;
+        color: #7a847d;
+        font-size: 14px;
+    }
+
+
+    /* =====================================================
+           FILTER CARD
+        ===================================================== */
+
+    .filter-card {
+        background: #ffffff;
+        border: 1px solid #edf0ed;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.045);
+        padding: 20px;
+        margin-bottom: 22px;
+    }
+
+    .filter-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr auto;
+        gap: 14px;
+        align-items: end;
+    }
+
+    .field-label {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #68736c;
+    }
+
+    .filter-control {
+        min-height: 44px;
+        border-radius: 10px !important;
+        border: 1px solid #dce3dd;
+    }
+
+        .filter-control:focus {
+            border-color: #198754;
+            box-shadow: 0 0 0 .15rem rgba(25,135,84,.10);
+        }
+
+    .btn-generate {
+        min-height: 44px;
+        border-radius: 10px;
+        padding: 0 22px;
+        font-weight: 700;
+        background: #198754;
+        border-color: #198754;
+    }
+
+        .btn-generate:hover {
+            background: #157347;
+            border-color: #157347;
+        }
+
+
+    /* =====================================================
+           SUMMARY CARDS
+        ===================================================== */
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 15px;
+        margin-bottom: 22px;
+    }
+
+    .summary-card {
+        background: #ffffff;
+        border: 1px solid #edf0ed;
+        border-radius: 15px;
+        padding: 19px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.045);
+    }
+
+    .summary-label {
+        font-size: 12px;
+        color: #7a847d;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .4px;
+    }
+
+    .summary-number {
+        margin-top: 5px;
+        font-size: 30px;
+        font-weight: 800;
+    }
+
+    .purchase-card {
+        border-left: 4px solid #0d6efd;
+    }
+
+        .purchase-card .summary-number {
+            color: #0d6efd;
+        }
+
+    .dispatch-card {
+        border-left: 4px solid #fd7e14;
+    }
+
+        .dispatch-card .summary-number {
+            color: #e86f00;
+        }
+
+    .net-card {
+        border-left: 4px solid #198754;
+    }
+
+        .net-card .summary-number {
+            color: #198754;
+        }
+
+    .dump-card {
+        border-left: 4px solid #6c757d;
+    }
+
+        .dump-card .summary-number {
+            color: #495057;
+        }
+
+
+    /* =====================================================
+           DATA CARDS
+        ===================================================== */
+
+    .data-card {
+        background: #ffffff;
+        border: 1px solid #edf0ed;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,.045);
+        margin-bottom: 22px;
+        overflow: hidden;
+    }
+
+    .data-card-header {
+        padding: 18px 20px;
+        border-bottom: 1px solid #edf0ed;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .data-card-title {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 750;
+        color: #2d382f;
+    }
+
+    .data-card-subtitle {
+        font-size: 12px;
+        color: #8a938d;
+    }
+
+    .data-card-body {
+        padding: 0;
+    }
+
+
+    /* =====================================================
+           TABLE
+        ===================================================== */
+
+    .table-wrap {
+        overflow-x: auto;
+    }
+
+    .analytics-table {
+        width: 100%;
+        min-width: 650px;
+        border-collapse: collapse;
+    }
+
+        .analytics-table th {
+            background: #f7f9f7;
+            color: #6c756e;
+            font-size: 12px;
+            font-weight: 750;
+            text-transform: uppercase;
+            letter-spacing: .35px;
+            padding: 14px 16px;
+            white-space: nowrap;
+            border-bottom: 1px solid #e8ece9;
+        }
+
+        .analytics-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eef1ef;
+            color: #37423a;
+            font-size: 14px;
+        }
+
+        .analytics-table tbody tr:hover {
+            background: #fbfdfb;
+        }
+
+    .table-total {
+        font-weight: 800;
+        background: #f8faf8;
+    }
+
+    .dump-name {
+        font-weight: 700;
+        color: #27342b;
+    }
+
+    .number-cell {
+        text-align: right;
+        font-weight: 650;
+    }
+
+    .total-cell {
+        text-align: right;
+        font-weight: 800;
+        color: #198754;
+    }
+
+
+    /* =====================================================
+           EMPTY STATE
+        ===================================================== */
+
+    .empty-state {
+        text-align: center;
+        padding: 55px 20px;
+        color: #7b857e;
+    }
+
+    .empty-icon {
+        font-size: 40px;
+        margin-bottom: 8px;
+    }
+
+    .empty-title {
+        font-weight: 750;
+        font-size: 16px;
+        color: #4d5750;
+    }
+
+    .empty-text {
+        margin-top: 4px;
+        font-size: 13px;
+    }
+
+
+    /* =====================================================
+           PERIOD INFO
+        ===================================================== */
+
+    .period-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 11px;
+        border-radius: 9px;
+        background: #f4f8f5;
+        color: #637067;
+        font-size: 12px;
+        font-weight: 650;
+    }
+
+
+    /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+    @@media (max-width: 1000px) {
+
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .filter-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+
+    @@media (max-width: 650px) {
+
+        .analytics-page {
+            padding: 14px;
+        }
+
+        .analytics-title {
+            font-size: 24px;
+        }
+
+        .summary-grid,
+        .filter-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+</style>
+
+
+<div class="analytics-page">
+
+
+    <!-- =====================================================
+         HEADER
+    ===================================================== -->
+
+    <div class="analytics-header">
+
+        <div>
+
+            <h1 class="analytics-title">
+                Analytics
+            </h1>
+
+            <div class="analytics-subtitle">
+                Paddy trolley analysis by date, type and dump
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         FILTERS
+    ===================================================== -->
+
+    <div class="filter-card">
+
+        <form method="get"
+              action="/Analytics">
+
+            <div class="filter-grid">
+
+
+                <!-- FROM DATE -->
+
+                <div>
+
+                    <label class="field-label">
+                        From Date
+                    </label>
+
+                    <input type="date"
+                           name="fromDate"
+                           value="@fromDate"
+                           class="form-control filter-control"
+                           required />
+
+                </div>
+
+
+                <!-- TO DATE -->
+
+                <div>
+
+                    <label class="field-label">
+                        To Date
+                    </label>
+
+                    <input type="date"
+                           name="toDate"
+                           value="@toDate"
+                           class="form-control filter-control"
+                           required />
+
+                </div>
+
+
+                <!-- TYPE -->
+
+                <div>
+
+                    <label class="field-label">
+                        Type
+                    </label>
+
+                    <select name="type"
+                            class="form-select filter-control">
+
+                        @if (selectedType == "All")
+                        {
+                            <option value="All" selected>
+                                All
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="All">
+                                All
+                            </option>
+                        }
+
+                        @if (selectedType == "Purchase")
+                        {
+                            <option value="Purchase" selected>
+                                Purchase
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="Purchase">
+                                Purchase
+                            </option>
+                        }
+
+                        @if (selectedType == "Dispatch")
+                        {
+                            <option value="Dispatch" selected>
+                                Dispatch
+                            </option>
+                        }
+                        else
+                        {
+                            <option value="Dispatch">
+                                Dispatch
+                            </option>
+                        }
+
+                    </select>
+
+                </div>
+
+
+                <!-- GENERATE -->
+
+                <div>
+
+                    <button type="submit"
+                            class="btn btn-success btn-generate">
+
+                        Generate
+
+                    </button>
+
+                </div>
+
+
+            </div>
+
+        </form>
+
+    </div>
+
+
+    <!-- =====================================================
+         SUMMARY
+    ===================================================== -->
+
+    <div class="summary-grid">
+
+
+        <!-- PURCHASE -->
+
+        <div class="summary-card purchase-card">
+
+            <div class="summary-label">
+                Total Purchase
+            </div>
+
+            <div class="summary-number">
+                @totalPurchase
+            </div>
+
+        </div>
+
+
+        <!-- DISPATCH -->
+
+        <div class="summary-card dispatch-card">
+
+            <div class="summary-label">
+                Total Dispatch
+            </div>
+
+            <div class="summary-number">
+                @totalDispatch
+            </div>
+
+        </div>
+
+
+        <!-- NET -->
+
+        <div class="summary-card net-card">
+
+            <div class="summary-label">
+                Net Trolleys
+            </div>
+
+            <div class="summary-number">
+                @netTrolleys
+            </div>
+
+        </div>
+
+
+        <!-- ACTIVE DUMPS -->
+
+        <div class="summary-card dump-card">
+
+            <div class="summary-label">
+                Active Dumps
+            </div>
+
+            <div class="summary-number">
+                @activeDumps
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         DUMP-WISE
+    ===================================================== -->
+
+    <div class="data-card">
+
+        <div class="data-card-header">
+
+            <div>
+
+                <h2 class="data-card-title">
+                    Dump-wise Analysis
+                </h2>
+
+                <div class="data-card-subtitle">
+                    Trolley totals by dump
+                </div>
+
+            </div>
+
+            <div class="period-badge">
+
+                @DateTime.Parse(fromDate)
+                –
+                @DateTime.Parse(toDate)
+
+            </div>
+
+        </div>
+
+
+        <div class="data-card-body">
+
+            @if (dumpWiseData.Rows.Count == 0)
+            {
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        📊
+                    </div>
+
+                    <div class="empty-title">
+                        No dump data found
+                    </div>
+
+                    <div class="empty-text">
+                        No records are available for the selected filters.
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+
+                    <table class="analytics-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    Dump Name
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Day
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Night
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Total
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @{
+                                int serial = 1;
+
+                                int totalDay = 0;
+                                int totalNight = 0;
+                                int totalAll = 0;
+                            }
+
+
+                            @foreach (DataRow row in dumpWiseData.Rows)
+                            {
+                                int day =
+                                    row["DayTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["DayTrolleys"]);
+
+                                int night =
+                                    row["NightTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["NightTrolleys"]);
+
+                                int total =
+                                    row["TotalTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["TotalTrolleys"]);
+
+                                string dumpName =
+                                    row["DumpName"] == DBNull.Value
+                                    ? "-"
+                                    : row["DumpName"]?.ToString()
+                                      ?? "-";
+
+
+                                totalDay += day;
+                                totalNight += night;
+                                totalAll += total;
+
+
+                                <tr>
+
+                                    <td>
+                                        @serial
+                                    </td>
+
+                                    <td>
+                                        <span class="dump-name">
+                                            @dumpName
+                                        </span>
+                                    </td>
+
+                                    <td class="number-cell">
+                                        @day
+                                    </td>
+
+                                    <td class="number-cell">
+                                        @night
+                                    </td>
+
+                                    <td class="total-cell">
+                                        @total
+                                    </td>
+
+                                </tr>
+
+
+                                serial++;
+                            }
+
+
+                            <!-- TOTAL ROW -->
+
+                            <tr class="table-total">
+
+                                <td>
+                                </td>
+
+                                <td>
+                                    Grand Total
+                                </td>
+
+                                <td class="number-cell">
+                                    @totalDay
+                                </td>
+
+                                <td class="number-cell">
+                                    @totalNight
+                                </td>
+
+                                <td class="total-cell">
+                                    @totalAll
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+         DATE-WISE
+    ===================================================== -->
+
+    <div class="data-card">
+
+        <div class="data-card-header">
+
+            <div>
+
+                <h2 class="data-card-title">
+                    Date-wise Analysis
+                </h2>
+
+                <div class="data-card-subtitle">
+                    Daily trolley totals
+                </div>
+
+            </div>
+
+            <div class="period-badge">
+                @selectedType
+            </div>
+
+        </div>
+
+
+        <div class="data-card-body">
+
+            @if (dateWiseData.Rows.Count == 0)
+            {
+                <div class="empty-state">
+
+                    <div class="empty-icon">
+                        📅
+                    </div>
+
+                    <div class="empty-title">
+                        No daily data found
+                    </div>
+
+                    <div class="empty-text">
+                        No records are available for the selected filters.
+                    </div>
+
+                </div>
+            }
+            else
+            {
+                <div class="table-wrap">
+
+                    <table class="analytics-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    #
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Day
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Night
+                                </th>
+
+                                <th style="text-align:right;">
+                                    Total
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @{
+                                int dateSerial = 1;
+
+                                int dateTotalDay = 0;
+                                int dateTotalNight = 0;
+                                int dateTotalAll = 0;
+                            }
+
+
+                            @foreach (DataRow row in dateWiseData.Rows)
+                            {
+                                DateTime entryDate =
+                                    Convert.ToDateTime(
+                                        row["EntryDate"]);
+
+                                int day =
+                                    row["DayTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["DayTrolleys"]);
+
+                                int night =
+                                    row["NightTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["NightTrolleys"]);
+
+                                int total =
+                                    row["TotalTrolleys"] == DBNull.Value
+                                    ? 0
+                                    : Convert.ToInt32(
+                                        row["TotalTrolleys"]);
+
+
+                                dateTotalDay += day;
+                                dateTotalNight += night;
+                                dateTotalAll += total;
+
+
+                                <tr>
+
+                                    <td>
+                                        @dateSerial
+                                    </td>
+
+                                    <td>
+                                        @entryDate.ToString("dd MMM yyyy")
+                                    </td>
+
+                                    <td class="number-cell">
+                                        @day
+                                    </td>
+
+                                    <td class="number-cell">
+                                        @night
+                                    </td>
+
+                                    <td class="total-cell">
+                                        @total
+                                    </td>
+
+                                </tr>
+
+
+                                dateSerial++;
+                            }
+
+
+                            <!-- TOTAL -->
+
+                            <tr class="table-total">
+
+                                <td>
+                                </td>
+
+                                <td>
+                                    Grand Total
+                                </td>
+
+                                <td class="number-cell">
+                                    @dateTotalDay
+                                </td>
+
+                                <td class="number-cell">
+                                    @dateTotalNight
+                                </td>
+
+                                <td class="total-cell">
+                                    @dateTotalAll
+                                </td>
+
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+            }
+
+        </div>
+
+    </div>
+
+
+</div>

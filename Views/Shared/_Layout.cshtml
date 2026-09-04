@@ -1,0 +1,761 @@
+﻿<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+
+    <title>
+        @ViewData["Title"] - Paddy MIS
+    </title>
+
+
+    <!-- Bootstrap -->
+
+    <link rel="stylesheet"
+          href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+
+    <!-- Site CSS -->
+
+    <link rel="stylesheet"
+          href="~/css/site.css"
+          asp-append-version="true" />
+
+
+    <style>
+
+        /* =====================================================
+           GLOBAL
+        ===================================================== */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+        }
+
+        body {
+            background: #f5f7f5;
+            font-family: "Segoe UI", Arial, sans-serif;
+            color: #1f2937;
+        }
+
+
+        /* =====================================================
+           APPLICATION
+        ===================================================== */
+
+        .app {
+            min-height: 100vh;
+            display: flex;
+        }
+
+
+        /* =====================================================
+           SIDEBAR
+        ===================================================== */
+
+        .sidebar {
+            width: 255px;
+            min-width: 255px;
+            background: #ffffff;
+            border-right: 1px solid #e5e7eb;
+            min-height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease;
+        }
+
+
+        /* LOGO */
+
+        .brand {
+            height: 75px;
+            display: flex;
+            align-items: center;
+            padding: 0 22px;
+            border-bottom: 1px solid #edf0ed;
+        }
+
+        .brand-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: #edf7ef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            margin-right: 11px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #198754;
+            line-height: 1.1;
+        }
+
+        .brand-subtitle {
+            font-size: 10px;
+            color: #9ca3af;
+            margin-top: 3px;
+            letter-spacing: 0.4px;
+        }
+
+
+        /* MENU */
+
+        .menu {
+            padding: 20px 12px;
+            flex: 1;
+        }
+
+        .menu-heading {
+            font-size: 10px;
+            font-weight: 700;
+            color: #9ca3af;
+            padding: 0 12px;
+            margin-bottom: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .menu-item {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            padding: 12px 13px;
+            margin-bottom: 5px;
+            border-radius: 10px;
+            color: #5f6873;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.18s ease;
+        }
+
+        .menu-item:hover {
+            text-decoration: none;
+            background: #f1f7f3;
+            color: #198754;
+        }
+
+        .menu-icon {
+            width: 30px;
+            font-size: 18px;
+            text-align: center;
+            margin-right: 9px;
+        }
+
+        .menu-arrow {
+            margin-left: auto;
+            color: #b5bdb7;
+            font-size: 16px;
+        }
+
+
+        /* ACTIVE MENU */
+
+        .menu-item.active {
+            background: #eaf6ee;
+            color: #198754;
+        }
+
+        .menu-item.active .menu-arrow {
+            color: #198754;
+        }
+
+
+        /* SIDEBAR FOOTER */
+
+        .sidebar-footer {
+            padding: 15px;
+            border-top: 1px solid #edf0ed;
+        }
+
+        .system-status {
+            background: #f7faf7;
+            border-radius: 11px;
+            padding: 12px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+
+        .status-dot {
+            width: 9px;
+            height: 9px;
+            background: #198754;
+            border-radius: 50%;
+        }
+
+        .status-text {
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+
+        /* =====================================================
+           MAIN AREA
+        ===================================================== */
+
+        .main-area {
+            margin-left: 255px;
+            width: calc(100% - 255px);
+            min-height: 100vh;
+        }
+
+
+        /* =====================================================
+           TOPBAR
+        ===================================================== */
+
+        .topbar {
+            height: 65px;
+            background: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .page-heading {
+            font-size: 17px;
+            font-weight: 700;
+            color: #374151;
+        }
+
+        .page-heading span {
+            color: #9ca3af;
+            font-weight: 400;
+            margin-left: 5px;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .today-badge {
+            background: #f5f8f5;
+            border: 1px solid #e7ece7;
+            padding: 8px 13px;
+            border-radius: 9px;
+            font-size: 12px;
+            color: #66706a;
+            font-weight: 600;
+        }
+
+
+        /* =====================================================
+           MOBILE BUTTON
+        ===================================================== */
+
+        .mobile-menu-button {
+            display: none;
+            border: none;
+            background: #edf7ef;
+            color: #198754;
+            width: 40px;
+            height: 40px;
+            border-radius: 9px;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+
+        /* =====================================================
+           CONTENT
+        ===================================================== */
+
+        .content {
+            min-height: calc(100vh - 65px);
+        }
+
+
+        /* =====================================================
+           MOBILE OVERLAY
+        ===================================================== */
+
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.25);
+            z-index: 999;
+        }
+
+
+        /* =====================================================
+           RESPONSIVE
+        ===================================================== */
+
+        @@media (max-width: 900px) {
+
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .sidebar-overlay.show {
+                display: block;
+            }
+
+            .main-area {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .mobile-menu-button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .topbar {
+                padding: 0 15px;
+            }
+
+            .today-badge {
+                display: none;
+            }
+        }
+
+
+        @@media (max-width: 500px) {
+
+            .page-heading {
+                font-size: 15px;
+            }
+
+            .content {
+                min-height: calc(100vh - 60px);
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+@{
+    string currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+
+    string currentAction =
+        ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+}
+
+
+<div class="app">
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ===================================================== -->
+
+    <aside class="sidebar"
+           id="sidebar">
+
+
+        <!-- BRAND -->
+
+        <div class="brand">
+
+            <div class="brand-icon">
+                🌾
+            </div>
+
+            <div class="brand-text">
+
+                <div class="brand-title">
+                    Paddy MIS
+                </div>
+
+                <div class="brand-subtitle">
+                    MANAGEMENT SYSTEM
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- MENU -->
+
+        <div class="menu">
+
+
+            <div class="menu-heading">
+                Main Menu
+            </div>
+
+
+            <!-- DASHBOARD -->
+
+            <a asp-controller="Home"
+               asp-action="Index"
+               class="menu-item @(currentController == "Home" ? "active" : "")">
+
+                <span class="menu-icon">
+                    🏠
+                </span>
+
+                <span>
+                    Dashboard
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <!-- DAILY REPORT -->
+
+            <a asp-controller="DailyReport"
+               asp-action="Index"
+               class="menu-item @(currentController == "DailyReport" ? "active" : "")">
+
+                <span class="menu-icon">
+                    📝
+                </span>
+
+                <span>
+                    Daily Report
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <!-- PURCHASE -->
+
+            <a asp-controller="Purchase"
+               asp-action="Index"
+               class="menu-item @(currentController == "Purchase" ? "active" : "")">
+
+                <span class="menu-icon">
+                    📦
+                </span>
+
+                <span>
+                    Purchase
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <!-- ANALYTICS -->
+
+            <a asp-controller="Analytics"
+               asp-action="Index"
+               class="menu-item @(currentController == "Analytics" ? "active" : "")">
+
+                <span class="menu-icon">
+                    📊
+                </span>
+
+                <span>
+                    Analytics
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <!-- MANAGE DUMPS -->
+
+            <a asp-controller="ManageDumps"
+               asp-action="Index"
+               class="menu-item @(currentController == "ManageDumps" ? "active" : "")">
+
+                <span class="menu-icon">
+                    ⚙️
+                </span>
+
+                <span>
+                    Manage Dumps
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <!-- EXCEL IMPORT -->
+
+            <a asp-controller="ExcelImport"
+               asp-action="Index"
+               class="menu-item @(currentController == "ExcelImport" ? "active" : "")">
+
+                <span class="menu-icon">
+                    📥
+                </span>
+
+                <span>
+                    Excel Import
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+            <div class="menu-heading"
+                 style="margin-top:25px;">
+
+                System
+
+            </div>
+
+
+            <!-- TEST PAGE -->
+
+            <a asp-controller="Test"
+               asp-action="Index"
+               class="menu-item @(currentController == "Test" ? "active" : "")">
+
+                <span class="menu-icon">
+                    🧪
+                </span>
+
+                <span>
+                    Test
+                </span>
+
+                <span class="menu-arrow">
+                    ›
+                </span>
+
+            </a>
+
+
+        </div>
+
+
+        <!-- SIDEBAR FOOTER -->
+
+        <div class="sidebar-footer">
+
+            <div class="system-status">
+
+                <span class="status-dot"></span>
+
+                <span class="status-text">
+                    Paddy MIS System Online
+                </span>
+
+            </div>
+
+        </div>
+
+
+    </aside>
+
+
+    <!-- OVERLAY -->
+
+    <div class="sidebar-overlay"
+         id="sidebarOverlay"
+         onclick="closeSidebar()">
+    </div>
+
+
+    <!-- =====================================================
+         MAIN AREA
+    ===================================================== -->
+
+    <main class="main-area">
+
+
+        <!-- TOP BAR -->
+
+        <header class="topbar">
+
+
+            <div class="topbar-left">
+
+
+                <!-- MOBILE MENU -->
+
+                <button class="mobile-menu-button"
+                        onclick="toggleSidebar()">
+
+                    ☰
+
+                </button>
+
+
+                <div class="page-heading">
+
+                    @ViewData["Title"]
+
+                    <span>
+                        / Paddy MIS
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="topbar-right">
+
+                <div class="today-badge">
+
+                    📅
+
+                    @DateTime.Today.ToString("dd MMM yyyy")
+
+                </div>
+
+            </div>
+
+
+        </header>
+
+
+        <!-- PAGE CONTENT -->
+
+        <div class="content">
+
+            @RenderBody()
+
+        </div>
+
+
+    </main>
+
+
+</div>
+
+
+<!-- =====================================================
+     JAVASCRIPT
+===================================================== -->
+
+<script>
+
+    function toggleSidebar() {
+
+        const sidebar =
+            document.getElementById("sidebar");
+
+        const overlay =
+            document.getElementById("sidebarOverlay");
+
+        sidebar.classList.toggle("open");
+
+        overlay.classList.toggle("show");
+
+    }
+
+
+    function closeSidebar() {
+
+        const sidebar =
+            document.getElementById("sidebar");
+
+        const overlay =
+            document.getElementById("sidebarOverlay");
+
+        sidebar.classList.remove("open");
+
+        overlay.classList.remove("show");
+
+    }
+
+
+    // Close mobile sidebar after clicking a menu item
+
+    document.querySelectorAll(".menu-item")
+        .forEach(function (item) {
+
+            item.addEventListener("click", function () {
+
+                if (window.innerWidth <= 900) {
+
+                    closeSidebar();
+
+                }
+
+            });
+
+        });
+
+</script>
+
+
+<!-- Bootstrap JS -->
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="~/js/site.js"
+        asp-append-version="true"></script>
+
+
+@await RenderSectionAsync(
+    "Scripts",
+    required: false
+)
+
+
+</body>
+
+</html>

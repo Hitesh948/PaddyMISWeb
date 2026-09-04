@@ -1,0 +1,33 @@
+﻿@{
+    ViewData["Title"] = "Database Test";
+}
+
+<div style="padding:40px; font-family:Arial;">
+
+    <h1>Paddy MIS Web</h1>
+
+    <hr />
+
+    <h2>@ViewBag.Message</h2>
+
+    @if (ViewBag.Error != null)
+    {
+        <div style="color:red;">
+            <strong>Error:</strong>
+            @ViewBag.Error
+        </div>
+    }
+    else
+    {
+        <p>
+            <strong>Server:</strong>
+            @ViewBag.Server
+        </p>
+
+        <p>
+            <strong>Database:</strong>
+            @ViewBag.Database
+        </p>
+    }
+
+</div>

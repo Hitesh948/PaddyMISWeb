@@ -1,0 +1,799 @@
+﻿@using System.Data
+@using System.Globalization
+@model System.Data.DataTable
+
+@{
+    DateTime today = DateTime.Today;
+
+    // Calculate Monday and Sunday of current week
+    int daysFromMonday = ((int)today.DayOfWeek + 6) % 7;
+    DateTime monday = today.AddDays(-daysFromMonday);
+    DateTime sunday = monday.AddDays(6);
+
+    // Dashboard values from HomeController
+    int todayTrolley = Convert.ToInt32(ViewBag.TodayTrolley ?? 0);
+    int todayEntries = Convert.ToInt32(ViewBag.TodayEntries ?? 0);
+    int weekTrolley = Convert.ToInt32(ViewBag.WeekTrolley ?? 0);
+    int weekEntries = Convert.ToInt32(ViewBag.WeekEntries ?? 0);
+
+    // Create daily totals for Monday-Sunday
+    Dictionary<DateTime, int> dailyTotals = new Dictionary<DateTime, int>();
+
+    for (int i = 0; i < 7; i++)
+    {
+        DateTime date = monday.AddDays(i).Date;
+        dailyTotals[date] = 0;
+    }
+
+    // Read weekly data from database result
+    if (Model != null && Model.Rows.Count > 0)
+    {
+        foreach (DataRow row in Model.Rows)
+        {
+            if (row["EntryDate"] != DBNull.Value)
+            {
+                DateTime entryDate = Convert.ToDateTime(row["EntryDate"]).Date;
+
+                if (dailyTotals.ContainsKey(entryDate))
+                {
+                    int total = 0;
+
+                    if (row["TotalTrolley"] != DBNull.Value)
+                    {
+                        total = Convert.ToInt32(row["TotalTrolley"]);
+                    }
+
+                    dailyTotals[entryDate] += total;
+                }
+            }
+        }
+    }
+
+    int highestTrolley = dailyTotals.Values.Max();
+
+    DateTime highestDate = monday;
+
+    foreach (var item in dailyTotals)
+    {
+        if (item.Value == highestTrolley && item.Value > 0)
+        {
+            highestDate = item.Key;
+            break;
+        }
+    }
+}
+
+<style>
+
+    .dashboard-page {
+        padding: 10px 5px 30px 5px;
+    }
+
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        gap: 15px;
+    }
+
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 0;
+        color: #243447;
+    }
+
+    .dashboard-subtitle {
+        color: #777;
+        margin-top: 5px;
+        font-size: 14px;
+    }
+
+    .today-date {
+        background: white;
+        border-radius: 12px;
+        padding: 10px 16px;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+        font-size: 14px;
+        font-weight: 600;
+        color: #555;
+        white-space: nowrap;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        height: 100%;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        transition: 0.2s;
+        border: 1px solid #f0f0f0;
+    }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 7px 22px rgba(0,0,0,0.10);
+        }
+
+    .stat-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        margin-bottom: 15px;
+        background: #f2f6f3;
+    }
+
+    .stat-title {
+        color: #777;
+        font-size: 13px;
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #243447;
+    }
+
+    .stat-small {
+        font-size: 12px;
+        color: #888;
+        margin-top: 3px;
+    }
+
+    .section-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.07);
+        border: 1px solid #f0f0f0;
+        height: 100%;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #243447;
+        margin-bottom: 18px;
+    }
+
+    .quick-action {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        background: #f8faf9;
+        border-radius: 12px;
+        padding: 13px 15px;
+        margin-bottom: 10px;
+        color: #243447;
+        transition: 0.2s;
+        border: 1px solid #edf1ee;
+    }
+
+        .quick-action:hover {
+            background: #eef5ef;
+            color: #243447;
+            transform: translateX(3px);
+        }
+
+    .quick-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-right: 12px;
+        background: white;
+        font-size: 18px;
+    }
+
+    .quick-text {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .weekly-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .weekly-table th {
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+            padding: 10px 8px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .weekly-table td {
+            padding: 11px 8px;
+            border-bottom: 1px solid #f1f1f1;
+            font-size: 14px;
+        }
+
+        .weekly-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .today-row {
+        background: #f3f8f4;
+        font-weight: 600;
+    }
+
+    .highest-row {
+        font-weight: 700;
+    }
+
+    .day-name {
+        font-weight: 600;
+    }
+
+    .trolley-number {
+        font-weight: 700;
+    }
+
+    .chart-container {
+        height: 260px;
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        padding: 20px 5px 5px 5px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .chart-day {
+        flex: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+        min-width: 35px;
+    }
+
+    .chart-value {
+        font-size: 11px;
+        font-weight: 700;
+        margin-bottom: 6px;
+        color: #555;
+    }
+
+    .chart-bar-area {
+        width: 100%;
+        height: 190px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .chart-bar {
+        width: 65%;
+        max-width: 42px;
+        min-height: 4px;
+        border-radius: 7px 7px 0 0;
+        background: #b9cdbd;
+        transition: 0.2s;
+    }
+
+        .chart-bar:hover {
+            opacity: 0.75;
+        }
+
+        .chart-bar.today {
+            background: #54745c;
+        }
+
+        .chart-bar.highest {
+            background: #36563e;
+        }
+
+    .chart-label {
+        font-size: 11px;
+        color: #777;
+        margin-top: 8px;
+        font-weight: 600;
+    }
+
+    .chart-date {
+        font-size: 9px;
+        color: #aaa;
+        margin-top: 2px;
+    }
+
+    .week-info {
+        background: #f7f9f7;
+        border-radius: 10px;
+        padding: 10px 13px;
+        font-size: 13px;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+    .empty-message {
+        text-align: center;
+        padding: 30px 10px;
+        color: #999;
+        font-size: 14px;
+    }
+
+    @@media (max-width: 768px) {
+
+        .dashboard-page {
+            padding: 5px 0 25px 0;
+        }
+
+        .dashboard-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .dashboard-title {
+            font-size: 23px;
+        }
+
+        .today-date {
+            width: 100%;
+        }
+
+        .stat-value {
+            font-size: 24px;
+        }
+
+        .chart-container {
+            gap: 5px;
+        }
+
+        .chart-bar {
+            width: 75%;
+        }
+
+        .weekly-table {
+            font-size: 13px;
+        }
+
+            .weekly-table th,
+            .weekly-table td {
+                padding: 9px 5px;
+            }
+    }
+
+</style>
+
+
+<div class="dashboard-page">
+
+    <!-- HEADER -->
+    <div class="dashboard-header">
+
+        <div>
+            <h1 class="dashboard-title">🌾 Paddy MIS</h1>
+
+            <div class="dashboard-subtitle">
+                Paddy Management Dashboard
+            </div>
+        </div>
+
+        <div class="today-date">
+            📅 @today.ToString("dd MMM yyyy")
+        </div>
+
+    </div>
+
+
+    <!-- STAT CARDS -->
+    <div class="row g-3 mb-4">
+
+        <!-- TODAY TROLLEY -->
+        <div class="col-12 col-sm-6 col-xl-3">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    🚜
+                </div>
+
+                <div class="stat-title">
+                    Today's Trolleys
+                </div>
+
+                <div class="stat-value">
+                    @todayTrolley
+                </div>
+
+                <div class="stat-small">
+                    Day + Night
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- TODAY ENTRIES -->
+        <div class="col-12 col-sm-6 col-xl-3">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    📝
+                </div>
+
+                <div class="stat-title">
+                    Today's Entries
+                </div>
+
+                <div class="stat-value">
+                    @todayEntries
+                </div>
+
+                <div class="stat-small">
+                    Daily report entries
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- WEEK TROLLEY -->
+        <div class="col-12 col-sm-6 col-xl-3">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    📊
+                </div>
+
+                <div class="stat-title">
+                    This Week
+                </div>
+
+                <div class="stat-value">
+                    @weekTrolley
+                </div>
+
+                <div class="stat-small">
+                    Total trolleys
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- WEEK ENTRIES -->
+        <div class="col-12 col-sm-6 col-xl-3">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    📋
+                </div>
+
+                <div class="stat-title">
+                    Weekly Entries
+                </div>
+
+                <div class="stat-value">
+                    @weekEntries
+                </div>
+
+                <div class="stat-small">
+                    Current week
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- QUICK ACTIONS + WEEKLY SUMMARY -->
+    <div class="row g-4 mb-4">
+
+
+        <!-- QUICK ACTIONS -->
+        <div class="col-12 col-lg-4">
+
+            <div class="section-card">
+
+                <div class="section-title">
+                    ⚡ Quick Actions
+                </div>
+
+
+                <a class="quick-action"
+                   asp-controller="DailyReport"
+                   asp-action="Index">
+
+                    <div class="quick-icon">
+                        📝
+                    </div>
+
+                    <div class="quick-text">
+                        Daily Report
+                    </div>
+
+                </a>
+
+
+                <a class="quick-action"
+                   asp-controller="Purchase"
+                   asp-action="Index">
+
+                    <div class="quick-icon">
+                        🚜
+                    </div>
+
+                    <div class="quick-text">
+                        Purchase Data
+                    </div>
+
+                </a>
+
+
+                <a class="quick-action"
+                   asp-controller="Analytics"
+                   asp-action="Index">
+
+                    <div class="quick-icon">
+                        📊
+                    </div>
+
+                    <div class="quick-text">
+                        Analytics
+                    </div>
+
+                </a>
+
+
+                <a class="quick-action"
+                   asp-controller="ExcelImport"
+                   asp-action="Index">
+
+                    <div class="quick-icon">
+                        📥
+                    </div>
+
+                    <div class="quick-text">
+                        Excel Import
+                    </div>
+
+                </a>
+
+            </div>
+
+        </div>
+
+
+        <!-- WEEKLY SUMMARY -->
+        <div class="col-12 col-lg-8">
+
+            <div class="section-card">
+
+                <div class="section-title">
+                    📅 Weekly Summary
+                </div>
+
+                <div class="week-info">
+
+                    Week:
+                    <strong>
+                        @monday.ToString("dd MMM yyyy")
+                    </strong>
+
+                    -
+                    <strong>
+                        @sunday.ToString("dd MMM yyyy")
+                    </strong>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="weekly-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>
+                                    Day
+                                </th>
+
+                                <th>
+                                    Date
+                                </th>
+
+                                <th>
+                                    Trolleys
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody>
+
+                            @foreach (var item in dailyTotals)
+                            {
+                                DateTime date = item.Key;
+                                int trolley = item.Value;
+
+                                string status = "";
+
+                                if (date == today)
+                                {
+                                    status = "Today";
+                                }
+                                else if (trolley > 0 && trolley == highestTrolley)
+                                {
+                                    status = "Highest";
+                                }
+
+                                string rowClass = "";
+
+                                if (date == today)
+                                {
+                                    rowClass = "today-row";
+                                }
+                                else if (trolley > 0 && trolley == highestTrolley)
+                                {
+                                    rowClass = "highest-row";
+                                }
+
+                                <tr class="@rowClass">
+
+                                    <td class="day-name">
+                                        @date.ToString("ddd")
+                                    </td>
+
+                                    <td>
+                                        @date.ToString("dd MMM")
+                                    </td>
+
+                                    <td class="trolley-number">
+                                        @trolley
+                                    </td>
+
+                                    <td>
+                                        @if (status == "Today")
+                                        {
+                                            <span>Today</span>
+                                        }
+                                        else if (status == "Highest")
+                                        {
+                                            <span>Highest</span>
+                                        }
+                                        else
+                                        {
+                                            <span>-</span>
+                                        }
+                                    </td>
+
+                                </tr>
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- WEEKLY TREND -->
+    <div class="row">
+
+        <div class="col-12">
+
+            <div class="section-card">
+
+                <div class="section-title">
+                    📈 Weekly Trolley Trend
+                </div>
+
+
+                @if (highestTrolley > 0)
+                {
+                    <div class="week-info">
+
+                        Highest:
+                        <strong>
+                            @highestTrolley trolleys
+                        </strong>
+
+                        on
+
+                        <strong>
+                            @highestDate.ToString("dddd, dd MMM")
+                        </strong>
+
+                    </div>
+                }
+                else
+                {
+                    <div class="week-info">
+                        No trolley entries recorded for this week yet.
+                    </div>
+                }
+
+
+                <div class="chart-container">
+
+                    @foreach (var item in dailyTotals)
+                    {
+                        DateTime date = item.Key;
+                        int trolley = item.Value;
+
+                        double percentage = 0;
+
+                        if (highestTrolley > 0)
+                        {
+                            percentage = ((double)trolley / highestTrolley) * 100;
+                        }
+
+                        string barClass = "chart-bar";
+
+                        if (date == today)
+                        {
+                            barClass += " today";
+                        }
+                        else if (trolley > 0 && trolley == highestTrolley)
+                        {
+                            barClass += " highest";
+                        }
+
+                        <div class="chart-day">
+
+                            <div class="chart-value">
+                                @trolley
+                            </div>
+
+                            <div class="chart-bar-area">
+
+                                <div class="@barClass"
+                                     style="height:@Math.Max(percentage, 3)%;">
+                                </div>
+
+                            </div>
+
+                            <div class="chart-label">
+                                @date.ToString("ddd")
+                            </div>
+
+                            <div class="chart-date">
+                                @date.ToString("dd/MM")
+                            </div>
+
+                        </div>
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
