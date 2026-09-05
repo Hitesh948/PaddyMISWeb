@@ -12,12 +12,12 @@
 ![Daily Report - Scroll](Screenshots/DailyReport-2.png)
 
 ### Analytics
-![Analytics - Top](Screenshots/Analytics-1.png)
+![Analytics - Top](Screenshots/Analytics.png)
 ![Analytics - Scroll](Screenshots/Analytics-2.png)
 
 ### Manage Dumps
-![ManageDumps - Top](Screenshots/ManageDumps-1.png)
-![ManageDumps - Scroll](Screenshots/ManageDumps-2.png)
+![ManageDumps - Top](Screenshots/ManageDump-1.png)
+![ManageDumps - Scroll](Screenshots/ManageDump-2.png)
 
 ### Excel Import
 ![Excel Import](Screenshots/ExcelImport.png)
