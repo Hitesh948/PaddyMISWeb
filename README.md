@@ -16,8 +16,8 @@
 ![Analytics - Scroll](Screenshots/Analytics-2.png)
 
 ### Manage Dumps
-![Manage Dumps - Top](Screenshots/ManageDumps-1.png)
-![Manage Dumps - Scroll](Screenshots/ManageDumps-2.png)
+![ManageDumps - Top](Screenshots/ManageDumps-1.png)
+![ManageDumps - Scroll](Screenshots/ManageDumps-2.png)
 
 ### Excel Import
 ![Excel Import](Screenshots/ExcelImport.png)
